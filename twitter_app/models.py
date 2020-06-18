@@ -7,7 +7,7 @@ User = get_user_model()
 # Create your models here.
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, help_text='User the profile belongs to')
-    picture = models.ImageField(help_text='Profile picture')
+    picture = models.ImageField(blank=True, null=True, help_text='Profile picture')
 
 
 class Tweet(models.Model):
