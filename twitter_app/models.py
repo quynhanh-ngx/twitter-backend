@@ -13,6 +13,7 @@ class Profile(models.Model):
 class Tweet(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, help_text='Author of the tweet')
     message = models.CharField(max_length=280, help_text='Message of the tweet')
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class Like(models.Model):
