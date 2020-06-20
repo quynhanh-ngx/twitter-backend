@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Tweet, Like
+from .models import Tweet, Like, Profile
 
 
 class TweetSerializer(serializers.ModelSerializer):
@@ -12,3 +12,9 @@ class LikeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Like
         fields = ('id', 'user', 'tweet')
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('user', 'picture')
