@@ -31,6 +31,8 @@ class Tweet(models.Model):
     def like_count(self) -> int:
         return self.get_likes().count()
 
+    class Meta:
+        ordering = ['-created_at']
 
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, help_text='User who likes the tweet')

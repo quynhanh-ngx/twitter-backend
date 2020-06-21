@@ -11,6 +11,14 @@ User = get_user_model()
 class TweetSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     author_picture = serializers.SerializerMethodField()
+    liked = serializers.SerializerMethodField()
+
+    def get_liked(self, obj):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+        return Like.objects.filter(user=user, tweet_id=obj.id).exists()
 
     def get_author_name(self, obj):
         return obj.author.first_name + ' ' + obj.author.last_name
@@ -22,10 +30,12 @@ class TweetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tweet
-        fields = ('id', 'author', 'message', 'created_at', 'like_count', 'author_name', 'author_picture')
+        fields = ('id', 'author', 'message', 'created_at', 'like_count', 'author_name', 'author_picture', 'liked')
 
 
 class LikeSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+
     class Meta:
         model = Like
         fields = ('id', 'user', 'tweet')

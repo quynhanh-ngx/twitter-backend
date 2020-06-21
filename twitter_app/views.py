@@ -24,6 +24,9 @@ class LikeListCreate(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 class LikeRetrieveDestroy(generics.RetrieveDestroyAPIView):
     queryset = Like.objects.all()
