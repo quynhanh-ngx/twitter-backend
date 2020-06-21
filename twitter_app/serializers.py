@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
@@ -8,9 +9,20 @@ User = get_user_model()
 
 
 class TweetSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+    author_picture = serializers.SerializerMethodField()
+
+    def get_author_name(self, obj):
+        return obj.author.first_name + ' ' + obj.author.last_name
+
+
+    def get_author_picture(self, obj):
+        # TODO : don't use hard coded media host
+        return 'http://127.0.0.1:8000' + settings.MEDIA_URL + (str(Profile.objects.get_or_create(user=obj.author)[0].picture) or 'unknown.jpg')
+
     class Meta:
         model = Tweet
-        fields = ('id', 'author', 'message', 'created_at', 'like_count')
+        fields = ('id', 'author', 'message', 'created_at', 'like_count', 'author_name', 'author_picture')
 
 
 class LikeSerializer(serializers.ModelSerializer):
