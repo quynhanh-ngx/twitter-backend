@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -31,6 +32,12 @@ class LikeListCreate(generics.ListCreateAPIView):
 class LikeRetrieveDestroy(generics.RetrieveDestroyAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+
+    def perform_destroy(self, like):
+        if like.user == self.request.user:
+            super(LikeRetrieveDestroy, self).perform_destroy(like)
+        else:
+            raise PermissionDenied()
 
 
 class ProfileListCreate(generics.ListCreateAPIView):
