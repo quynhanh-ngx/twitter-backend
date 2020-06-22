@@ -11,6 +11,7 @@ User = get_user_model()
 class TweetSerializer(serializers.ModelSerializer):
     author_name = serializers.SerializerMethodField()
     author_picture = serializers.SerializerMethodField()
+    author = serializers.ReadOnlyField(source='author.username')
     liked = serializers.SerializerMethodField()
 
     def get_liked(self, obj):

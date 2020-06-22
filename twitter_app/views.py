@@ -15,10 +15,19 @@ class TweetListCreate(generics.ListCreateAPIView):
     queryset = Tweet.objects.all()
     serializer_class = TweetSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
 
 class TweetRetrieveDestroy(generics.RetrieveDestroyAPIView):
     queryset = Tweet.objects.all()
     serializer_class = TweetSerializer
+
+    def perform_destroy(self, tweet):
+        if tweet.author == self.request.user:
+            super().perform_destroy(tweet)
+        else:
+            raise PermissionDenied()
 
 
 class LikeListCreate(generics.ListCreateAPIView):
@@ -35,7 +44,7 @@ class LikeRetrieveDestroy(generics.RetrieveDestroyAPIView):
 
     def perform_destroy(self, like):
         if like.user == self.request.user:
-            super(LikeRetrieveDestroy, self).perform_destroy(like)
+            super().perform_destroy(like)
         else:
             raise PermissionDenied()
 
