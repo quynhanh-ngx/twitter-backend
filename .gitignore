@@ -2,6 +2,10 @@ db.sqlite3
 __pycache__
 .idea
 venv
-media/*
+media/*.*
 !media/.gitkeep
 !media/unknown.jpg
+media/tweet_media/videos/*
+!media/tweet_media/videos/.gitkeep
+media/tweet_media/images/*
+!media/tweet_media/images/.gitkeep

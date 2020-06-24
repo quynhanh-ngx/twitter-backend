@@ -3,9 +3,16 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework_jwt.settings import api_settings
 
-from .models import Tweet, Like, Profile
+from .models import Tweet, Like, Profile, TweetImage
 
 User = get_user_model()
+
+
+class TweetImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TweetImage
+        fields = ('image',)
+        read_only_fields = ("tweet",)
 
 
 class TweetSerializer(serializers.ModelSerializer):
@@ -13,6 +20,7 @@ class TweetSerializer(serializers.ModelSerializer):
     author_picture = serializers.SerializerMethodField()
     author = serializers.ReadOnlyField(source='author.username')
     liked = serializers.SerializerMethodField()
+    images = TweetImageSerializer(many=True, required=False)
 
     def get_liked(self, obj):
         user = None
@@ -24,14 +32,30 @@ class TweetSerializer(serializers.ModelSerializer):
     def get_author_name(self, obj):
         return obj.author.first_name + ' ' + obj.author.last_name
 
-
     def get_author_picture(self, obj):
         # TODO : don't use hard coded media host
-        return 'http://127.0.0.1:8000' + settings.MEDIA_URL + (str(Profile.objects.get_or_create(user=obj.author)[0].picture) or 'unknown.jpg')
+        return 'http://127.0.0.1:8000' + settings.MEDIA_URL + (
+                str(Profile.objects.get_or_create(user=obj.author)[0].picture) or 'unknown.jpg')
+
+    def create(self, validated_data):
+        images_data = self.context['view'].request.FILES
+        tweet = super().create(validated_data)
+        image_count = 0
+        for key, image_data in images_data.items():
+            if key == 'video':
+                continue
+            # maximum image for a tweet
+            if image_count == settings.TWITTER_IMAGES_PER_TWEET:
+                break
+            TweetImage.objects.create(tweet=tweet, image=image_data)
+            image_count += 1
+        return tweet
 
     class Meta:
         model = Tweet
-        fields = ('id', 'author', 'message', 'created_at', 'like_count', 'author_name', 'author_picture', 'liked')
+        fields = ('id', 'author', 'message',
+                  'created_at', 'like_count', 'author_name',
+                  'author_picture', 'liked', 'video', 'images', 'replying_to')
 
 
 class LikeSerializer(serializers.ModelSerializer):
@@ -55,7 +79,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserSerializerWithToken(serializers.ModelSerializer):
-
     token = serializers.SerializerMethodField()
     password = serializers.CharField(write_only=True)
 

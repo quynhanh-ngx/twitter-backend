@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from twitter_app.models import Profile, Tweet, Like
+from twitter_app.models import Profile, Tweet, Like, TweetImage
 
 
 @admin.register(Profile)
@@ -16,4 +16,9 @@ class TweetAdmin(admin.ModelAdmin):
 
 @admin.register(Like)
 class LikeAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(TweetImage)
+class TweetImageAdmin(admin.ModelAdmin):
     pass
