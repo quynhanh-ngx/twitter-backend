@@ -18,7 +18,7 @@ class Profile(models.Model):
 
 class Tweet(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, help_text='Author of the tweet')
-    message = models.CharField(max_length=280, help_text='Message of the tweet')
+    message = models.CharField(blank=True, null=True, max_length=280, help_text='Message of the tweet')
     created_at = models.DateTimeField(auto_now_add=True)
     video = models.FileField(blank=True, null=True, upload_to='tweet_media/videos/', help_text='Video for the tweet')
     replying_to = models.ForeignKey('Tweet', blank=True, null=True, on_delete=models.SET_NULL,

@@ -37,11 +37,20 @@ class TweetSerializer(serializers.ModelSerializer):
         return 'http://127.0.0.1:8000' + settings.MEDIA_URL + (
                 str(Profile.objects.get_or_create(user=obj.author)[0].picture) or 'unknown.jpg')
 
+    def validate(self, attrs):
+        if not any((attrs.get('message'), self.context['view'].request.FILES)):
+            raise serializers.ValidationError(
+                {'message': 'Tweet cannot be blank if you don\'t provide a video or images'}
+            )
+        return attrs
+
     def create(self, validated_data):
         images_data = self.context['view'].request.FILES
         tweet = super().create(validated_data)
         image_count = 0
+        print("Checking images")
         for key, image_data in images_data.items():
+            print(f"Found file {key}={image_data}")
             if key == 'video':
                 continue
             # maximum image for a tweet
