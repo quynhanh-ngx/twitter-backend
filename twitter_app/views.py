@@ -1,14 +1,21 @@
+from functools import reduce
+
 from django.shortcuts import render
 
 # Create your views here.
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Tweet, Like, Profile
 from .serializers import TweetSerializer, LikeSerializer, ProfileSerializer, UserSerializer, UserSerializerWithToken
 from rest_framework import generics, permissions, status
+
+
+from django.db.models import Q
+import operator
 
 
 class TweetListCreate(generics.ListCreateAPIView):
@@ -41,6 +48,16 @@ class LikeListCreate(generics.ListCreateAPIView):
 class LikeRetrieveDestroy(generics.RetrieveDestroyAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+
+    def get_object(self):
+        queryset = self.get_queryset()  # Get the base queryset
+        queryset = self.filter_queryset(queryset)  # Apply any filter backends
+        filter = {
+            'user': self.request.user.pk,
+            'tweet': self.kwargs['tweet']
+        }
+        q = reduce(operator.and_, (Q(x) for x in filter.items()))
+        return get_object_or_404(queryset, q)
 
     def perform_destroy(self, like):
         if like.user == self.request.user:
