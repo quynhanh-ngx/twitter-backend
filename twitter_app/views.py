@@ -26,6 +26,13 @@ class TweetListCreate(generics.ListCreateAPIView):
         serializer.save(author=self.request.user)
 
 
+class TweetListByAuthor(generics.ListAPIView):
+    serializer_class = TweetSerializer
+
+    def get_queryset(self):
+        return Tweet.objects.filter(author=self.kwargs['author'])
+
+
 class TweetRetrieveDestroy(generics.RetrieveDestroyAPIView):
     queryset = Tweet.objects.all()
     serializer_class = TweetSerializer

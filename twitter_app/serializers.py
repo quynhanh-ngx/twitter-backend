@@ -38,9 +38,39 @@ class TweetSerializer(serializers.ModelSerializer):
                 str(Profile.objects.get_or_create(user=obj.author)[0].picture) or 'unknown.jpg')
 
     def validate(self, attrs):
-        if not any((attrs.get('message'), self.context['view'].request.FILES)):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+        has_content = any((attrs.get('message'), self.context['view'].request.FILES))
+        is_retweet = attrs.get('is_retweet')
+        replying_to = attrs.get('replying_to')
+        if is_retweet:
+            if not replying_to:
+                raise serializers.ValidationError(
+                    {'is_retweet': 'is_retweet must be False if replying_to is null'}
+                )
+            # Cannot retweet a blank retweet
+            if not replying_to.has_content:
+                raise serializers.ValidationError(
+                    {'is_retweet': 'Cannot retweet a retweet that doesn\'t have a comment'}
+                )
+            # Retweet without comment
+            if not has_content:
+                # Verify user has not already retweeted what they're replying to
+                if Tweet.objects.filter(replying_to_id=replying_to,
+                                        author=user,
+                                        message="",
+                                        video="",
+                                        images__isnull=True
+                                        ).exists():
+                    raise serializers.ValidationError(
+                        {'is_retweet': 'Cannot retweet something without a comment twice'}
+                    )
+
+        elif not has_content:
             raise serializers.ValidationError(
-                {'message': 'Tweet cannot be blank if you don\'t provide a video or images'}
+                {'message': 'Tweet cannot be blank if you don\'t provide a video or images unless it\'s a retweet'}
             )
         return attrs
 
@@ -64,7 +94,8 @@ class TweetSerializer(serializers.ModelSerializer):
         model = Tweet
         fields = ('id', 'author', 'message',
                   'created_at', 'like_count', 'author_name',
-                  'author_picture', 'liked', 'video', 'images', 'replying_to')
+                  'author_picture', 'liked', 'video', 'images', 'replying_to',
+                  'is_retweet')
 
 
 class LikeSerializer(serializers.ModelSerializer):
