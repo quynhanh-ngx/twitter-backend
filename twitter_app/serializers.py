@@ -20,14 +20,30 @@ class TweetSerializer(serializers.ModelSerializer):
     author_picture = serializers.SerializerMethodField()
     author = serializers.ReadOnlyField(source='author.username')
     liked = serializers.SerializerMethodField()
+    retweet_id = serializers.SerializerMethodField()
     images = TweetImageSerializer(many=True, required=False)
 
     def get_liked(self, obj):
-        user = None
-        request = self.context.get("request")
-        if request and hasattr(request, "user"):
-            user = request.user
+        """
+        :return: whether the current user has liked this tweet
+        """
+        user = self._get_user_if_exists()
         return Like.objects.filter(user=user, tweet_id=obj.id).exists()
+
+    def get_retweet_id(self, obj):
+        """
+        :return: whether the current user has retweeted this tweet
+        """
+        user = self._get_user_if_exists()
+        try:
+            return Tweet.objects.get(replying_to_id=obj.id,
+                                            author=user,
+                                            message="",
+                                            video="",
+                                            images__isnull=True
+                                            ).id
+        except Tweet.DoesNotExist:
+            return None
 
     def get_author_name(self, obj):
         return obj.author.first_name + ' ' + obj.author.last_name
@@ -38,10 +54,7 @@ class TweetSerializer(serializers.ModelSerializer):
                 str(Profile.objects.get_or_create(user=obj.author)[0].picture) or 'unknown.jpg')
 
     def validate(self, attrs):
-        user = None
-        request = self.context.get("request")
-        if request and hasattr(request, "user"):
-            user = request.user
+        user = self._get_user_if_exists()
         has_content = any((attrs.get('message'), self.context['view'].request.FILES))
         is_retweet = attrs.get('is_retweet')
         replying_to = attrs.get('replying_to')
@@ -74,6 +87,13 @@ class TweetSerializer(serializers.ModelSerializer):
             )
         return attrs
 
+    def _get_user_if_exists(self):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+        return user
+
     def create(self, validated_data):
         images_data = self.context['view'].request.FILES
         tweet = super().create(validated_data)
@@ -95,7 +115,7 @@ class TweetSerializer(serializers.ModelSerializer):
         fields = ('id', 'author', 'message',
                   'created_at', 'like_count', 'author_name',
                   'author_picture', 'liked', 'video', 'images', 'replying_to',
-                  'is_retweet')
+                  'is_retweet', 'retweet_id')
 
 
 class LikeSerializer(serializers.ModelSerializer):
